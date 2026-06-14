@@ -236,12 +236,47 @@ def build_flowchart(resources):
     return "\n".join(lines)
 
 
+def build_details(data, resource_type):
+    if resource_type == "person":
+        return {
+            "hometown": data.get("hometown", ""),
+            "availability": data.get("availability", ""),
+            "organizations": parse_tags(data.get("organizations", "")),
+            "affiliations": parse_tags(data.get("affiliations", "")),
+            "skills": parse_tags(data.get("skills", "")),
+        }
+    elif resource_type == "business":
+        return {
+            "cost": data.get("cost", ""),
+            "capacity": data.get("capacity", ""),
+            "hours": data.get("hours", ""),
+            "parking": data.get("parking", ""),
+            "services": parse_tags(data.get("services", "")),
+        }
+    elif resource_type == "location":
+        return {
+            "capacity": data.get("capacity", ""),
+            "indoor_outdoor": data.get("indoor_outdoor", ""),
+            "rental_cost": data.get("rental_cost", ""),
+            "permit_required": data.get("permit_required", ""),
+            "parking": data.get("parking", ""),
+            "amenities": parse_tags(data.get("amenities", "")),
+        }
+    return {}
+
+
 @app.route("/")
+def root():
+    from flask import redirect
+    return redirect("/lpmt")
+
+
+@app.route("/lpmt")
 def index():
     return render_template("index.html")
 
 
-@app.route("/plan", methods=["POST"])
+@app.route("/lpmt/plan", methods=["POST"])
 def plan():
     goal = request.form.get("goal", "").strip()
     if not goal:
@@ -252,7 +287,7 @@ def plan():
     return jsonify({"resources": resources, "checklist": checklist, "flowchart": flowchart})
 
 
-@app.route("/resources")
+@app.route("/lpmt/resources")
 def list_resources():
     conn = get_db()
     all_resources = conn.execute("SELECT * FROM resources ORDER BY type, name").fetchall()
@@ -260,53 +295,56 @@ def list_resources():
     return render_template("resources.html", resources=[enrich_resource(r) for r in all_resources], max_tags=MAX_TAGS)
 
 
-@app.route("/add", methods=["POST"])
+@app.route("/lpmt/resource/<int:resource_id>")
+def get_resource(resource_id):
+    conn = get_db()
+    r = conn.execute("SELECT * FROM resources WHERE id = ?", (resource_id,)).fetchone()
+    conn.close()
+    if not r:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(enrich_resource(r))
+
+
+@app.route("/lpmt/add", methods=["POST"])
 def add_resource():
     data = request.form
     resource_type = data.get("type", "")
     tags = ",".join(parse_tags(data.get("tags", "")))
-
-    details = {}
-    if resource_type == "person":
-        details = {
-            "hometown": data.get("hometown", ""),
-            "availability": data.get("availability", ""),
-            "organizations": parse_tags(data.get("organizations", "")),
-            "affiliations": parse_tags(data.get("affiliations", "")),
-            "skills": parse_tags(data.get("skills", "")),
-        }
-    elif resource_type == "business":
-        details = {
-            "cost": data.get("cost", ""),
-            "capacity": data.get("capacity", ""),
-            "hours": data.get("hours", ""),
-            "parking": data.get("parking", ""),
-            "services": parse_tags(data.get("services", "")),
-        }
-    elif resource_type == "location":
-        details = {
-            "capacity": data.get("capacity", ""),
-            "indoor_outdoor": data.get("indoor_outdoor", ""),
-            "rental_cost": data.get("rental_cost", ""),
-            "permit_required": data.get("permit_required", ""),
-            "parking": data.get("parking", ""),
-            "amenities": parse_tags(data.get("amenities", "")),
-        }
-
     conn = get_db()
     conn.execute(
         "INSERT INTO resources (name, type, description, tags, email, phone, website, address, notes, details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (data["name"], resource_type, data["description"], tags,
          data.get("email", ""), data.get("phone", ""),
          data.get("website", ""), data.get("address", ""),
-         data.get("notes", ""), json.dumps(details))
+         data.get("notes", ""), json.dumps(build_details(data, resource_type)))
     )
     conn.commit()
     conn.close()
     return jsonify({"success": True})
 
 
-@app.route("/delete/<int:resource_id>", methods=["POST"])
+@app.route("/lpmt/edit/<int:resource_id>", methods=["POST"])
+def edit_resource(resource_id):
+    data = request.form
+    resource_type = data.get("type", "")
+    tags = ",".join(parse_tags(data.get("tags", "")))
+    conn = get_db()
+    conn.execute(
+        """UPDATE resources SET name=?, type=?, description=?, tags=?,
+           email=?, phone=?, website=?, address=?, notes=?, details=?
+           WHERE id=?""",
+        (data["name"], resource_type, data["description"], tags,
+         data.get("email", ""), data.get("phone", ""),
+         data.get("website", ""), data.get("address", ""),
+         data.get("notes", ""), json.dumps(build_details(data, resource_type)),
+         resource_id)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+
+@app.route("/lpmt/delete/<int:resource_id>", methods=["POST"])
 def delete_resource(resource_id):
     conn = get_db()
     conn.execute("DELETE FROM resources WHERE id = ?", (resource_id,))

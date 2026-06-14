@@ -3,13 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local People Power Map</title>
+    <title>LPMT — Local People Mapping Tool</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        // Apply saved theme before page renders to avoid flash
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+    </script>
 </head>
 <body>
 <div class="container">
-    <h1>Local People Power Map</h1>
+    <header class="site-header">
+        <div class="brand">
+            <span class="brand-acronym">LPMT</span>
+            <span class="brand-full">Local People Mapping Tool</span>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+            <span id="theme-icon">🌙</span>
+        </button>
+    </header>
+
     <p class="subtitle">Describe your goal and we'll map out the people, places, and businesses to make it happen.</p>
 
     <div class="search-box">
@@ -18,7 +33,6 @@
     </div>
 
     <div id="results" style="display:none;">
-
         <section>
             <h2>Matched Resources</h2>
             <div id="resource-cards" class="card-grid"></div>
@@ -33,15 +47,27 @@
             <h2>Execution Flowchart</h2>
             <div id="flowchart" class="mermaid"></div>
         </section>
-
     </div>
 
     <div class="nav-links">
-        <a href="/resources">View &amp; Manage Repository</a>
+        <a href="/lpmt/resources">View &amp; Manage Repository</a>
     </div>
 </div>
 
 <script>
+function toggleTheme() {
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+    localStorage.setItem("theme", isDark ? "light" : "dark");
+    document.getElementById("theme-icon").textContent = isDark ? "🌙" : "☀️";
+}
+
+// Set correct icon on load
+window.addEventListener("DOMContentLoaded", () => {
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.getElementById("theme-icon").textContent = isDark ? "☀️" : "🌙";
+});
+
 function buildCard(r) {
     const d = r.details || {};
     let html = `<div class="card ${r.type}">
@@ -55,13 +81,12 @@ function buildCard(r) {
     if (r.website) html += `<p class="meta"><span class="meta-label">Web:</span> ${r.website}</p>`;
 
     if (r.type === "person") {
-        if (d.hometown)    html += `<p class="meta"><span class="meta-label">Hometown:</span> ${d.hometown}</p>`;
+        if (d.hometown)     html += `<p class="meta"><span class="meta-label">Hometown:</span> ${d.hometown}</p>`;
         if (d.availability) html += `<p class="meta"><span class="meta-label">Availability:</span> ${d.availability}</p>`;
         if (d.organizations?.length) html += tagGroup("Organizations", d.organizations, "org");
         if (d.affiliations?.length)  html += tagGroup("Affiliations", d.affiliations, "affil");
         if (d.skills?.length)        html += tagGroup("Skills", d.skills, "skill");
     }
-
     if (r.type === "business") {
         if (d.cost)     html += `<p class="meta"><span class="meta-label">Cost:</span> ${d.cost}</p>`;
         if (d.capacity) html += `<p class="meta"><span class="meta-label">Capacity:</span> ${d.capacity}</p>`;
@@ -69,20 +94,17 @@ function buildCard(r) {
         if (d.parking)  html += `<p class="meta"><span class="meta-label">Parking:</span> ${d.parking}</p>`;
         if (d.services?.length) html += tagGroup("Services", d.services, "service");
     }
-
     if (r.type === "location") {
-        if (d.capacity)       html += `<p class="meta"><span class="meta-label">Capacity:</span> ${d.capacity}</p>`;
-        if (d.indoor_outdoor) html += `<p class="meta"><span class="meta-label">Type:</span> ${d.indoor_outdoor}</p>`;
-        if (d.rental_cost)    html += `<p class="meta"><span class="meta-label">Rental Cost:</span> ${d.rental_cost}</p>`;
+        if (d.capacity)        html += `<p class="meta"><span class="meta-label">Capacity:</span> ${d.capacity}</p>`;
+        if (d.indoor_outdoor)  html += `<p class="meta"><span class="meta-label">Type:</span> ${d.indoor_outdoor}</p>`;
+        if (d.rental_cost)     html += `<p class="meta"><span class="meta-label">Rental Cost:</span> ${d.rental_cost}</p>`;
         if (d.permit_required) html += `<p class="meta"><span class="meta-label">Permit:</span> ${d.permit_required}</p>`;
-        if (d.parking)        html += `<p class="meta"><span class="meta-label">Parking:</span> ${d.parking}</p>`;
+        if (d.parking)         html += `<p class="meta"><span class="meta-label">Parking:</span> ${d.parking}</p>`;
         if (d.amenities?.length) html += tagGroup("Amenities", d.amenities, "amenity");
     }
 
     if (r.notes) html += `<p class="meta notes">${r.notes}</p>`;
-
     if (r.tag_list?.length) html += tagGroup("Tags", r.tag_list, "");
-
     html += `</div>`;
     return html;
 }
@@ -101,22 +123,17 @@ async function planEvent() {
     const formData = new FormData();
     formData.append("goal", goal);
 
-    const response = await fetch("/plan", { method: "POST", body: formData });
+    const response = await fetch("/lpmt/plan", { method: "POST", body: formData });
     const data = await response.json();
-
     if (data.error) { alert(data.error); return; }
 
     const cardGrid = document.getElementById("resource-cards");
-    if (data.resources.length === 0) {
-        cardGrid.innerHTML = "<p>No matching resources found. Try adding some to your repository.</p>";
-    } else {
-        cardGrid.innerHTML = data.resources.map(buildCard).join("");
-    }
+    cardGrid.innerHTML = data.resources.length === 0
+        ? "<p>No matching resources found. Try adding some to your repository.</p>"
+        : data.resources.map(buildCard).join("");
 
-    const checklist = document.getElementById("checklist");
-    checklist.innerHTML = data.checklist
-        .map(item => `<li><input type="checkbox"> ${item}</li>`)
-        .join("");
+    document.getElementById("checklist").innerHTML = data.checklist
+        .map(item => `<li><input type="checkbox"> ${item}</li>`).join("");
 
     const flowchartDiv = document.getElementById("flowchart");
     flowchartDiv.removeAttribute("data-processed");
