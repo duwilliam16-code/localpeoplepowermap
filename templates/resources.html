@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Repository</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Resource Repository</h1>
+    <a href="/">← Back to Planner</a>
+
+    <section>
+        <h2>Add New Resource</h2>
+        <form id="add-form" class="add-form">
+
+            <!-- Common fields -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" name="name" placeholder="e.g. Marcus Johnson" required>
+                </div>
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select name="type" id="type-select" required onchange="showTypeFields()">
+                        <option value="">-- Select Type --</option>
+                        <option value="person">Person</option>
+                        <option value="business">Business</option>
+                        <option value="location">Location</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Description *</label>
+                <textarea name="description" rows="2" placeholder="Brief description..." required></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" name="phone" placeholder="555-000-0000">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Website</label>
+                    <input type="text" name="website" placeholder="www.example.com">
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" name="address" placeholder="123 Main St">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea name="notes" rows="2" placeholder="Availability, pricing notes, special instructions..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>General Tags <span class="tag-count" id="count-tags">0 / {{ max_tags }}</span></label>
+                <div class="tag-input-area" onclick="focusTagInput('tag-input-tags')">
+                    <div class="tag-chips" id="chips-tags"></div>
+                    <input type="text" id="tag-input-tags" data-field="tags" placeholder="Type a tag and press Enter or comma...">
+                </div>
+                <input type="hidden" name="tags" id="hidden-tags">
+                <p class="field-hint">Press <strong>Enter</strong> or <strong>,</strong> to add. Click a tag to remove it.</p>
+            </div>
+
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea name="notes" rows="2" placeholder="Availability, pricing notes, special instructions..."></textarea>
+            </div>
+
+            <!-- Person-specific fields -->
+            <div id="fields-person" class="type-fields" style="display:none;">
+                <div class="type-section-header person">Person Details</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Hometown</label>
+                        <input type="text" name="hometown" placeholder="e.g. Houston, TX">
+                    </div>
+                    <div class="form-group">
+                        <label>Availability</label>
+                        <input type="text" name="availability" placeholder="e.g. Weekends only">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Organizations <span class="tag-count" id="count-organizations">0 / {{ max_tags }}</span></label>
+                    <div class="tag-input-area" onclick="focusTagInput('tag-input-organizations')">
+                        <div class="tag-chips" id="chips-organizations"></div>
+                        <input type="text" id="tag-input-organizations" data-field="organizations" placeholder="Add an organization and press Enter...">
+                    </div>
+                    <input type="hidden" name="organizations" id="hidden-organizations">
+                </div>
+
+                <div class="form-group">
+                    <label>Affiliations <span class="tag-count" id="count-affiliations">0 / {{ max_tags }}</span></label>
+                    <div class="tag-input-area" onclick="focusTagInput('tag-input-affiliations')">
+                        <div class="tag-chips" id="chips-affiliations"></div>
+                        <input type="text" id="tag-input-affiliations" data-field="affiliations" placeholder="Add an affiliation and press Enter...">
+                    </div>
+                    <input type="hidden" name="affiliations" id="hidden-affiliations">
+                </div>
+
+                <div class="form-group">
+                    <label>Skills <span class="tag-count" id="count-skills">0 / {{ max_tags }}</span></label>
+                    <div class="tag-input-area" onclick="focusTagInput('tag-input-skills')">
+                        <div class="tag-chips" id="chips-skills"></div>
+                        <input type="text" id="tag-input-skills" data-field="skills" placeholder="Add a skill and press Enter...">
+                    </div>
+                    <input type="hidden" name="skills" id="hidden-skills">
+                </div>
+            </div>
+
+            <!-- Business-specific fields -->
+            <div id="fields-business" class="type-fields" style="display:none;">
+                <div class="type-section-header business">Business Details</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cost / Pricing</label>
+                        <input type="text" name="cost" placeholder="e.g. Starting at $15/plate">
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity</label>
+                        <input type="text" name="capacity" placeholder="e.g. Up to 500 guests">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Hours of Operation</label>
+                        <input type="text" name="hours" placeholder="e.g. Mon–Sat 9am–6pm">
+                    </div>
+                    <div class="form-group">
+                        <label>Parking</label>
+                        <input type="text" name="parking" placeholder="e.g. Free lot on site">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Services Offered <span class="tag-count" id="count-services">0 / {{ max_tags }}</span></label>
+                    <div class="tag-input-area" onclick="focusTagInput('tag-input-services')">
+                        <div class="tag-chips" id="chips-services"></div>
+                        <input type="text" id="tag-input-services" data-field="services" placeholder="Add a service and press Enter...">
+                    </div>
+                    <input type="hidden" name="services" id="hidden-services">
+                </div>
+            </div>
+
+            <!-- Location-specific fields -->
+            <div id="fields-location" class="type-fields" style="display:none;">
+                <div class="type-section-header location">Location Details</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Capacity</label>
+                        <input type="text" name="capacity" placeholder="e.g. 300 people">
+                    </div>
+                    <div class="form-group">
+                        <label>Indoor / Outdoor</label>
+                        <select name="indoor_outdoor">
+                            <option value="">-- Select --</option>
+                            <option value="indoor">Indoor</option>
+                            <option value="outdoor">Outdoor</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Rental Cost</label>
+                        <input type="text" name="rental_cost" placeholder="e.g. $200/day or Free">
+                    </div>
+                    <div class="form-group">
+                        <label>Permit Required?</label>
+                        <input type="text" name="permit_required" placeholder="e.g. Yes — City Parks permit">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Parking</label>
+                    <input type="text" name="parking" placeholder="e.g. Free lot, 200 spaces">
+                </div>
+
+                <div class="form-group">
+                    <label>Amenities <span class="tag-count" id="count-amenities">0 / {{ max_tags }}</span></label>
+                    <div class="tag-input-area" onclick="focusTagInput('tag-input-amenities')">
+                        <div class="tag-chips" id="chips-amenities"></div>
+                        <input type="text" id="tag-input-amenities" data-field="amenities" placeholder="Add an amenity and press Enter...">
+                    </div>
+                    <input type="hidden" name="amenities" id="hidden-amenities">
+                </div>
+            </div>
+
+            <button type="submit">Add Resource</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>All Resources ({{ resources|length }})</h2>
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="filterCards('all', this)">All</button>
+            <button class="filter-btn" onclick="filterCards('person', this)">People</button>
+            <button class="filter-btn" onclick="filterCards('business', this)">Businesses</button>
+            <button class="filter-btn" onclick="filterCards('location', this)">Locations</button>
+        </div>
+
+        <div class="card-grid" id="resource-grid">
+            {% for r in resources %}
+            <div class="card {{ r.type }}" data-type="{{ r.type }}">
+                <span class="badge">{{ r.type }}</span>
+                <h3>{{ r.name }}</h3>
+                <p class="description">{{ r.description }}</p>
+
+                {% if r.address %}<p class="meta"><span class="meta-label">Address:</span> {{ r.address }}</p>{% endif %}
+                {% if r.email %}<p class="meta"><span class="meta-label">Email:</span> {{ r.email }}</p>{% endif %}
+                {% if r.phone %}<p class="meta"><span class="meta-label">Phone:</span> {{ r.phone }}</p>{% endif %}
+                {% if r.website %}<p class="meta"><span class="meta-label">Web:</span> {{ r.website }}</p>{% endif %}
+
+                <!-- Person details -->
+                {% if r.type == 'person' and r.details %}
+                    {% if r.details.hometown %}<p class="meta"><span class="meta-label">Hometown:</span> {{ r.details.hometown }}</p>{% endif %}
+                    {% if r.details.availability %}<p class="meta"><span class="meta-label">Availability:</span> {{ r.details.availability }}</p>{% endif %}
+                    {% if r.details.organizations %}
+                    <div class="tag-group">
+                        <span class="tag-group-label">Organizations</span>
+                        {% for t in r.details.organizations %}<span class="tag-chip-display org">{{ t }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if r.details.affiliations %}
+                    <div class="tag-group">
+                        <span class="tag-group-label">Affiliations</span>
+                        {% for t in r.details.affiliations %}<span class="tag-chip-display affil">{{ t }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if r.details.skills %}
+                    <div class="tag-group">
+                        <span class="tag-group-label">Skills</span>
+                        {% for t in r.details.skills %}<span class="tag-chip-display skill">{{ t }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Business details -->
+                {% if r.type == 'business' and r.details %}
+                    {% if r.details.cost %}<p class="meta"><span class="meta-label">Cost:</span> {{ r.details.cost }}</p>{% endif %}
+                    {% if r.details.capacity %}<p class="meta"><span class="meta-label">Capacity:</span> {{ r.details.capacity }}</p>{% endif %}
+                    {% if r.details.hours %}<p class="meta"><span class="meta-label">Hours:</span> {{ r.details.hours }}</p>{% endif %}
+                    {% if r.details.parking %}<p class="meta"><span class="meta-label">Parking:</span> {{ r.details.parking }}</p>{% endif %}
+                    {% if r.details.services %}
+                    <div class="tag-group">
+                        <span class="tag-group-label">Services</span>
+                        {% for t in r.details.services %}<span class="tag-chip-display service">{{ t }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Location details -->
+                {% if r.type == 'location' and r.details %}
+                    {% if r.details.capacity %}<p class="meta"><span class="meta-label">Capacity:</span> {{ r.details.capacity }}</p>{% endif %}
+                    {% if r.details.indoor_outdoor %}<p class="meta"><span class="meta-label">Type:</span> {{ r.details.indoor_outdoor }}</p>{% endif %}
+                    {% if r.details.rental_cost %}<p class="meta"><span class="meta-label">Rental Cost:</span> {{ r.details.rental_cost }}</p>{% endif %}
+                    {% if r.details.permit_required %}<p class="meta"><span class="meta-label">Permit:</span> {{ r.details.permit_required }}</p>{% endif %}
+                    {% if r.details.parking %}<p class="meta"><span class="meta-label">Parking:</span> {{ r.details.parking }}</p>{% endif %}
+                    {% if r.details.amenities %}
+                    <div class="tag-group">
+                        <span class="tag-group-label">Amenities</span>
+                        {% for t in r.details.amenities %}<span class="tag-chip-display amenity">{{ t }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                {% if r.notes %}<p class="meta notes">{{ r.notes }}</p>{% endif %}
+
+                {% if r.tag_list %}
+                <div class="tag-group">
+                    <span class="tag-group-label">Tags</span>
+                    {% for tag in r.tag_list %}<span class="tag-chip-display">{{ tag }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<script>
+const MAX_TAGS = {{ max_tags }};
+const tagState = {};
+
+function initTagField(field) {
+    if (tagState[field]) return;
+    tagState[field] = [];
+
+    const input = document.getElementById(`tag-input-${field}`);
+    if (!input) return;
+
+    input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            addTag(field, input.value);
+            input.value = "";
+        }
+    });
+    input.addEventListener("blur", function() {
+        if (input.value.trim()) {
+            addTag(field, input.value);
+            input.value = "";
+        }
+    });
+}
+
+function focusTagInput(id) {
+    document.getElementById(id).focus();
+}
+
+function addTag(field, value) {
+    const tag = value.trim().toLowerCase().replace(/,/g, "");
+    if (!tag) return;
+    if (!tagState[field]) tagState[field] = [];
+    if (tagState[field].length >= MAX_TAGS) return;
+    if (tagState[field].includes(tag)) return;
+    tagState[field].push(tag);
+    renderChips(field);
+}
+
+function removeTag(field, index) {
+    tagState[field].splice(index, 1);
+    renderChips(field);
+}
+
+function renderChips(field) {
+    const chips = document.getElementById(`chips-${field}`);
+    const hidden = document.getElementById(`hidden-${field}`);
+    const count = document.getElementById(`count-${field}`);
+    if (!chips) return;
+
+    chips.innerHTML = "";
+    (tagState[field] || []).forEach((tag, i) => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip-edit";
+        chip.innerHTML = `${tag} <button type="button" onclick="removeTag('${field}', ${i})">×</button>`;
+        chips.appendChild(chip);
+    });
+    if (hidden) hidden.value = (tagState[field] || []).join(",");
+    if (count) {
+        const len = (tagState[field] || []).length;
+        count.textContent = `${len} / ${MAX_TAGS}`;
+        count.style.color = len >= MAX_TAGS ? "#ef4444" : "#888";
+    }
+}
+
+function showTypeFields() {
+    const type = document.getElementById("type-select").value;
+    document.querySelectorAll(".type-fields").forEach(el => el.style.display = "none");
+    if (type) {
+        const section = document.getElementById(`fields-${type}`);
+        if (section) section.style.display = "block";
+        initTagInputsForType(type);
+    }
+}
+
+function initTagInputsForType(type) {
+    initTagField("tags");
+    if (type === "person") {
+        ["organizations", "affiliations", "skills"].forEach(initTagField);
+    } else if (type === "business") {
+        initTagField("services");
+    } else if (type === "location") {
+        initTagField("amenities");
+    }
+}
+
+// Init general tags on load
+initTagField("tags");
+
+document.getElementById("add-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    // Flush any typed-but-not-confirmed tags
+    ["tags", "organizations", "affiliations", "skills", "services", "amenities"].forEach(field => {
+        const input = document.getElementById(`tag-input-${field}`);
+        if (input && input.value.trim()) {
+            addTag(field, input.value);
+            input.value = "";
+        }
+    });
+
+    const formData = new FormData(this);
+    const response = await fetch("/add", { method: "POST", body: formData });
+    const data = await response.json();
+    if (data.success) {
+        alert("Resource added! Refreshing...");
+        location.reload();
+    }
+});
+
+function filterCards(type, btn) {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll("#resource-grid .card").forEach(card => {
+        card.style.display = (type === "all" || card.dataset.type === type) ? "" : "none";
+    });
+}
+</script>
+</body>
+</html>
