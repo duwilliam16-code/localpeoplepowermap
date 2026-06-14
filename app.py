@@ -306,6 +306,15 @@ def add_resource():
     return jsonify({"success": True})
 
 
+@app.route("/delete/<int:resource_id>", methods=["POST"])
+def delete_resource(resource_id):
+    conn = get_db()
+    conn.execute("DELETE FROM resources WHERE id = ?", (resource_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)

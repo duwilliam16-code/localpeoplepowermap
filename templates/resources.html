@@ -290,6 +290,8 @@
                     {% for tag in r.tag_list %}<span class="tag-chip-display">{{ tag }}</span>{% endfor %}
                 </div>
                 {% endif %}
+
+                <button class="delete-btn" onclick="deleteResource({{ r.id }}, this)">Delete</button>
             </div>
             {% endfor %}
         </div>
@@ -412,6 +414,15 @@ function filterCards(type, btn) {
     document.querySelectorAll("#resource-grid .card").forEach(card => {
         card.style.display = (type === "all" || card.dataset.type === type) ? "" : "none";
     });
+}
+
+async function deleteResource(id, btn) {
+    if (!confirm("Delete this resource? This cannot be undone.")) return;
+    const response = await fetch(`/delete/${id}`, { method: "POST" });
+    const data = await response.json();
+    if (data.success) {
+        btn.closest(".card").remove();
+    }
 }
 </script>
 </body>
